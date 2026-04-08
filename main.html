@@ -247,144 +247,97 @@
 		<pre id="output"></pre>
 
 		<script>
-			function toggleTheme() {
-				document.body.classList.toggle("light");
-			}
-			function toggleOptionalSection() {
-				let el = document.getElementById("optional_section");
-				el.style.display =
-					el.style.display === "none" ? "block" : "none";
-			}
-			function toggle(id) {
-				let el = document.getElementById(id);
-				el.style.display =
-					el.style.display === "none" ? "inline-block" : "none";
-			}
-			function togglePersona() {
-				let el = document.getElementById("persona_fields");
-				el.style.display =
-					el.style.display === "none" ? "block" : "none";
-			}
+function generate() {
+    let nameInput = document.getElementById('name').value.trim();
+    let groupInput = document.getElementById('group').value.trim();
+    let modelInput = document.getElementById('model').value.trim();
+    let classTypeInput = document.getElementById('classType').value;
+    let outputEl = document.getElementById('output');
 
-			// Load preset lists
-			async function loadList(file, datalistId) {
-				try {
-					let res = await fetch(file);
-					if (!res.ok) throw new Error();
-					let text = await res.text();
-					let items = text
-						.split(/\r?\n/)
-						.filter((x) => x.trim() !== "");
+    if (!nameInput || !groupInput || !modelInput) {
+        outputEl.innerText = "Error: Name, Group, and Model are required!";
+        return;
+    }
 
-					let datalist = document.getElementById(datalistId);
-					items.forEach((item) => {
-						let opt = document.createElement("option");
-						opt.value = item;
-						datalist.appendChild(opt);
-					});
-				} catch {
-					document.getElementById("errors").innerText +=
-						`Missing ${file}\n`;
-				}
-			}
+    let data = buildData();
 
-			// Add new values dynamically to list (runtime only)
-			function attachAutoAdd(inputId, datalistId) {
-				let input = document.getElementById(inputId);
-				let datalist = document.getElementById(datalistId);
+    let result = '';
+    if (classTypeInput === 'support') {
+        result = `RegisterSupportClass( "${nameInput}", "${groupInput}", ${modelInput}, ${data} )`;
+    } else {
+        result = `RegisterClass( "${nameInput}", "${groupInput}", ${modelInput}, ${data} )`;
+    }
 
-				input.addEventListener("change", () => {
-					let val = input.value.trim();
-					if (!val) return;
+    outputEl.innerText = result;
+}
 
-					let exists = Array.from(datalist.options).some(
-						(o) => o.value === val,
-					);
-					if (!exists) {
-						let opt = document.createElement("option");
-						opt.value = val;
-						datalist.appendChild(opt);
-					}
-				});
-			}
+function buildData() {
+    let lines = [];
+    function add(key, value) { lines.push(`\t\t${key} = ${value},`); }
 
-			loadList("group.txt", "group_list");
-			loadList("team.txt", "team_list");
-			loadList("chip.txt", "chip_list");
+    let teamValue = document.getElementById('team').value.trim();
+    let weaponsValue = document.getElementById('weapons').value.trim() || '{}';
+    let ammoValue = document.getElementById('ammo').value.trim() || '{}';
+    let chipValue = document.getElementById('chip').value.trim() || '';
+    let omnitoolValue = document.getElementById('omnitool').checked ? 'true' : 'false';
+    let healthValue = document.getElementById('health').value.trim();
+    let walkSpeedValue = document.getElementById('walk_speed').value.trim();
+    let runSpeedValue = document.getElementById('run_speed').value.trim();
+    let sanityValue = document.getElementById('sanity').value.trim();
+    let vestValue = document.getElementById('vest').value.trim() || 'nil';
+    let maxValue = document.getElementById('max').value.trim();
+    let tierValue = document.getElementById('tier').value.trim();
 
-			attachAutoAdd("group", "group_list");
-			attachAutoAdd("team", "team_list");
-			attachAutoAdd("chip", "chip_list");
+    add("team", teamValue);
+    add("weapons", weaponsValue);
+    add("ammo", ammoValue);
+    add("chip", `"${chipValue}"`);
+    add("omnitool", omnitoolValue);
+    add("health", healthValue);
+    add("walk_speed", walkSpeedValue);
+    add("run_speed", runSpeedValue);
+    add("sanity", sanityValue);
+    add("vest", vestValue);
+    add("max", maxValue);
+    add("tier", tierValue);
 
-			function buildData() {
-				let lines = [];
-				function add(key, value) {
-					lines.push(`\t\t${key} = ${value},`);
-				}
+    // Optional section
+    if (document.getElementById('optional_master').checked) {
+        if (document.getElementById('stamina_toggle').checked) {
+            add("stamina", document.getElementById('stamina').value.trim());
+        }
+        if (document.getElementById('max_sanity_toggle').checked) {
+            add("max_sanity", document.getElementById('max_sanity').value.trim());
+        }
+        if (document.getElementById('hide_toggle').checked) add("hide", "true");
+        if (document.getElementById('select_group_toggle').checked) {
+            add("select_group", `"${document.getElementById('select_group').value.trim()}"`);
+        }
+        if (document.getElementById('weight_toggle').checked) {
+            add("weight", document.getElementById('weight').value.trim());
+        }
+        if (document.getElementById('persona_toggle').checked) {
+            let personaClass = document.getElementById('persona_class').value.trim();
+            let personaTeam = document.getElementById('persona_team').value.trim();
+            lines.push(`\t\tpersona = { class = ${personaClass}, team = ${personaTeam} },`);
+        }
+        if (document.getElementById('override_toggle').checked) {
+            lines.push(`\t\toverride = function(ply)\n\t\t\t${document.getElementById('override_body').value}\n\t\tend,`);
+        }
+        if (document.getElementById('spawn_toggle').checked) {
+            let spawnVal = document.getElementById('spawn').value.trim();
+            if (spawnVal) add("spawn", spawnVal);
+        }
+        if (document.getElementById('select_override_toggle').checked) {
+            lines.push(`\t\tselect_override = function(cur, total)\n\t\t\t${document.getElementById('select_override_body').value}\n\t\tend,`);
+        }
+        if (document.getElementById('callback_toggle').checked) {
+            lines.push(`\t\tcallback = function(ply, class)\n\t\t\t${document.getElementById('callback_body').value}\n\t\tend,`);
+        }
+    }
 
-				add("team", team.value);
-				add("weapons", weapons.value.trim() || "{}");
-				add("ammo", ammo.value.trim() || "{}");
-				add("chip", `"${chip.value || ""}"`);
-				add("omnitool", omnitool.checked ? "true" : "false");
-				add("health", health.value);
-				add("walk_speed", walk_speed.value);
-				add("run_speed", run_speed.value);
-				add("sanity", sanity.value);
-				add("vest", vest.value.trim() || "nil");
-				add("max", max.value);
-				add("tier", tier.value);
-
-				if (optional_master.checked) {
-					if (stamina_toggle.checked) add("stamina", stamina.value);
-					if (max_sanity_toggle.checked)
-						add("max_sanity", max_sanity.value);
-					if (hide_toggle.checked) add("hide", "true");
-					if (select_group_toggle.checked)
-						add("select_group", `"${select_group.value}"`);
-					if (weight_toggle.checked) add("weight", weight.value);
-
-					if (persona_toggle.checked)
-						lines.push(
-							`\t\tpersona = { class = ${persona_class.value}, team = ${persona_team.value} },`,
-						);
-
-					if (override_toggle.checked)
-						lines.push(
-							`\t\toverride = function(ply)\n\t\t\t${override_body.value}\n\t\tend,`,
-						);
-
-					if (spawn_toggle.checked && spawn.value.trim() !== "")
-						add("spawn", spawn.value);
-
-					if (select_override_toggle.checked)
-						lines.push(
-							`\t\tselect_override = function(cur, total)\n\t\t\t${select_override_body.value}\n\t\tend,`,
-						);
-
-					if (callback_toggle.checked)
-						lines.push(
-							`\t\tcallback = function(ply, class)\n\t\t\t${callback_body.value}\n\t\tend,`,
-						);
-				}
-
-				return "{\n" + lines.join("\n") + "\n\t}";
-			}
-
-			function generate() {
-				let type = classType.value;
-				let name = `"${name.value}"`;
-				let groupVal = `"${group.value}"`;
-				let model = model.value;
-				let data = buildData();
-
-				let result =
-					type === "support"
-						? `RegisterSupportClass( ${name}, ${groupVal}, ${model}, ${data} )`
-						: `RegisterClass( ${name}, ${groupVal}, ${model}, ${data} )`;
-
-				output.innerText = result;
-			}
-		</script>
+    return "{\n" + lines.join("\n") + "\n\t}";
+}
+</script>
 	</body>
 </html>

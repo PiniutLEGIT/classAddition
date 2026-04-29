@@ -96,7 +96,7 @@ let damagePresets = [];
 fetch("damage.txt")
 .then(r => r.text())
 .then(text => {
-  damagePresets = text.split("\\n").map(x=>x.trim()).filter(x=>x);
+  damagePresets = text.split(/\r?\n/).map(x=>x.trim()).filter(x=>x);
 })
 .catch(() => {
   console.warn("damage.txt not found");

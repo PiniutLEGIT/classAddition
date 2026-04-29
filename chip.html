@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Ulepszanie czipów</title>
+<style>
+:root { --bg:#0f1115; --panel:#151922; --text:#e6e6e6; --accent:#4aa3ff; --border:#2a3140; }
+body.light { --bg:#ffffff; --panel:#f4f4f4; --text:#000000; --accent:#0066cc; --border:#ccc; }
+body { font-family: Arial; background:var(--bg); color:var(--text); padding:20px; }
+.section { background:var(--panel); border:1px solid var(--border); padding:10px; margin-bottom:10px; }
+button { background:var(--accent); border:none; padding:6px 10px; color:#fff; cursor:pointer; }
+select { background:var(--panel); color:var(--text); border:1px solid var(--border); padding:4px; }
+
+table { width:100%; border-collapse: collapse; }
+th, td { border:1px solid var(--border); padding:6px; text-align:center; }
+
+/* result tables */
+.result-table { width:100%; border-collapse: collapse; margin-top:6px; }
+.result-table td { border-top:1px solid var(--border); padding:6px; text-align:left; }
+.result-table tr:first-child td { border-top:none; }
+.level { width:120px; color:#9aa3b2; }
+
+/* status colors */
+.green{background:green;} .orange{background:orange;} .red{background:red;} .cyan{background:cyan;}
+
+/* tooltip */
+.tooltip { position:relative; cursor:help; }
+.tooltip::after {
+  content: attr(data-tip);
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:125%; background:#000; color:#fff; padding:4px 6px; border-radius:4px;
+  white-space:nowrap; font-size:12px; opacity:0; pointer-events:none;
+}
+.tooltip:hover::after { opacity:1; }
+  
+a, a:visited { color: var(--accent); }
+a:hover { color: var(--text); }
+  
+#textDisplay { padding:10px; }
+</style>
+</head>
+<body>
+<p>
+<a href="https://github.com/PiniutLEGIT/upgrade">Menu główne</a>
+  | 
+<a href="https://piniutlegit.github.io/upgrade/zajebisty%20pokazacz%20pinuta%20dotyczacy%20ulepszania%20czipow.html">Ulepszanie czipów</a>
+  | 
+<a href="https://piniutlegit.github.io/classAddition/main.html">Tworzenie klas</a>
+</p>
+<h2>Ulepszanie czipów</h2>
+<button onclick="toggleTheme()">Toggle Light/Dark</button>
+
+<div class="section">
+<select id="itemList">
+<option value="def">--Wybierz czip--</option>
+<option value="jan">Woźny</option>
+<option value="sci1">Naukowiec poziomu 1</option>
+<option value="sci2">Naukowiec poziomu 2</option>
+<option value="sci3">Naukowiec poziomu 3</option>
+<option value="spec">Specjalista zabezpieczeń</option>
+<option value="guard">Ochroniarz</option>
+<option value="chief">Szef ochrony</option>
+<option value="mtf">MTF</option>
+<option value="com">Dowódca MTF</option>
+<option value="hacked3">Zhakowany 3</option>
+<option value="hacked4">Zhakowany 4</option>
+<option value="hacked5">Zhakowany 5</option>
+<option value="director">Dyrektor Placówki</option>
+<option value="o5">O5</option>
+<option value="goc">Zhakowana GOC</option>
+</select>
+<button id="showTextButton">Pokaż</button>
+</div>
+
+<div class="section">
+<table>
+<thead>
+<tr>
+<th class="tooltip" data-tip="Dostęp do Safe">Safe</th>
+<th class="tooltip" data-tip="Dostęp do Euclid">Euclid</th>
+<th class="tooltip" data-tip="Dostęp do Keter">Keter</th>
+<th class="tooltip" data-tip="Biuro">Biuro</th>
+<th class="tooltip" data-tip="Ambulatorium">Ambulatorium</th>
+<th class="tooltip" data-tip="Ogólny dostęp">Ogólny</th>
+<th class="tooltip" data-tip="Checkpoint LCZ-HCZ">LCZ-HCZ</th>
+<th class="tooltip" data-tip="Checkpoint EZ-HCZ">EZ-HCZ</th>
+<th class="tooltip" data-tip="Głowica">Głowica</th>
+<th class="tooltip" data-tip="Centrum elektryczne">EC</th>
+<th class="tooltip" data-tip="Zbrojownia">Zbrojownia</th>
+<th class="tooltip" data-tip="Brama A">Brama A</th>
+<th class="tooltip" data-tip="Brama B">Brama B</th>
+<th class="tooltip" data-tip="Femur Breaker">Femur</th>
+<th class="tooltip" data-tip="Głowica Alfa">Alfa</th>
+<th class="tooltip" data-tip="Głowica Omega">Omega</th>
+<th class="tooltip" data-tip="Działo cząsteczkowe">Działo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td id="safe" class="status"></td>
+<td id="euclid" class="status"></td>
+<td id="keter" class="status"></td>
+<td id="office" class="status"></td>
+<td id="medbay" class="status"></td>
+<td id="general" class="status"></td>
+<td id="check_lcz" class="status"></td>
+<td id="check_ez" class="status"></td>
+<td id="warhead" class="status"></td>
+<td id="ec" class="status"></td>
+<td id="armory" class="status"></td>
+<td id="gatea" class="status"></td>
+<td id="gateb" class="status"></td>
+<td id="femur" class="status"></td>
+<td id="alpha" class="status"></td>
+<td id="omega" class="status"></td>
+<td id="particle" class="status"></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="section"><div id="textDisplay"></div></div>
+
+<script>
+function toggleTheme(){document.body.classList.toggle('light');}
+
+const itemList=document.getElementById("itemList");
+const btn=document.getElementById("showTextButton");
+const textDisplay=document.getElementById("textDisplay");
+const statusCells=document.querySelectorAll('.status');
+
+function tableHTML(title, rows){
+  return `<b>${title}</b><table class="result-table">` + rows.map(r=>
+    `<tr><td class="level">${r.level}</td><td>${r.text}</td></tr>`
+  ).join("") + `</table>`;
+}
+
+const itemTexts={
+def: `<b>"Weź mnie nie wkurwiaj, co?"</b>`,
+jan: tableHTML("Woźny", [
+  {level:"1:1", text:"—"},
+  {level:"Fine", text:"Naukowiec poziomu 2 / Specjalista zabezpieczeń"},
+  {level:"Very Fine", text:"Naukowiec poziomu 2 / Specjalista zabezpieczeń"}
+]),
+sci1: tableHTML("Naukowiec poziomu 1", [
+  {level:"1:1", text:"—"},
+  {level:"Fine", text:"Naukowiec poziomu 2 / Specjalista zabezpieczeń"},
+  {level:"Very Fine", text:"Naukowiec poziomu 2 / Specjalista zabezpieczeń"}
+]),
+sci2: tableHTML("Naukowiec poziomu 2", [
+  {level:"1:1", text:"Specjalista / Ochroniarz"},
+  {level:"Fine", text:"Naukowiec poziomu 3"},
+  {level:"Very Fine", text:"Naukowiec poziomu 3 / Zhakowana 3 / Brak zmian / Zniszczenie"}
+]),
+sci3: tableHTML("Naukowiec poziomu 3", [
+  {level:"1:1", text:"Zhakowana 3 (zawsze)"},
+  {level:"Fine", text:"Zhakowana 4 / Brak"},
+  {level:"Very Fine", text:"Zhakowana 4 / MTF / Brak zmian / Zniszczenie"}
+]),
+spec: tableHTML("Specjalista zabezpieczeń", [
+  {level:"1:1", text:"Naukowiec poziomu 2 / Guard"},
+  {level:"Fine", text:"Zhakowana 3 (zawsze)"},
+  {level:"Very Fine", text:"Zhakowana 3 / MTF / Brak zmian / Zniszczenie"}
+]),
+guard: tableHTML("Ochroniarz", [
+  {level:"1:1", text:"Naukowiec poziomu 2 / Specjalista zabezpieczeń"},
+  {level:"Fine", text:"Szef ochrony (zawsze)"},
+  {level:"Very Fine", text:"Chief / MTF / Brak zmian"}
+]),
+chief: tableHTML("Szef ochrony", [
+  {level:"1:1", text:"MTF (zawsze)"},
+  {level:"Fine", text:"—"},
+  {level:"Very Fine", text:"MTF / Dowódca / Brak / Zniszczenie"}
+]),
+mtf: tableHTML("MTF", [
+  {level:"1:1", text:"Szef ochrony (zawsze)"},
+  {level:"Fine", text:"Dowódca MTF / Brak"},
+  {level:"Very Fine", text:"Dowódca / Zniszczenie"}
+]),
+com: tableHTML("Dowódca MTF", [
+  {level:"1:1", text:"Dyrektor / Brak"},
+  {level:"Fine", text:"—"},
+  {level:"Very Fine", text:"Losowe wysokie poziomy / Brak / Zniszczenie"}
+]),
+hacked3: tableHTML("Zhakowana 3", [
+  {level:"1:1", text:"Naukowiec poziomu 3 / Zhakowana 3"},
+  {level:"Fine", text:"Zhakowana 4 / Chief / Brak"},
+  {level:"Very Fine", text:"Chief / Zhakowana 4 / MTF / Zniszczenie"}
+]),
+hacked4: tableHTML("Zhakowana 4", [
+  {level:"1:1", text:"Zhakowana 4 / Brak"},
+  {level:"Fine", text:"Zhakowana 5 / MTF / Brak"},
+  {level:"Very Fine", text:"MTF / Zhakowana 5 / Zniszczenie"}
+]),
+hacked5: tableHTML("Zhakowana 5", [
+  {level:"1:1", text:"Zhakowana 5 / O5 / Brak"},
+  {level:"Fine", text:"Dowódca / Brak"},
+  {level:"Very Fine", text:"Dowódca / Zniszczenie"}
+]),
+director: tableHTML("Dyrektor", [
+  {level:"1:1", text:"Dowódca (zawsze)"},
+  {level:"Fine", text:"O5 / Brak"},
+  {level:"Very Fine", text:"O5 / Zniszczenie"}
+]),
+o5: tableHTML("O5", [
+  {level:"1:1", text:"Zhakowana 5 (zawsze)"},
+  {level:"Fine", text:"—"},
+  {level:"Very Fine", text:"Woźny / Brak"}
+]),
+goc: tableHTML("Zhakowana GOC", [
+  {level:"1:1", text:"—"},
+  {level:"Fine", text:"Zhakowana 3 / Zhakowana 4 / Brak"},
+  {level:"Very Fine", text:"Zhakowana 4 / MTF / Zniszczenie"}
+])
+};
+
+const itemColors={
+def:{safe:'cyan',euclid:'cyan'},
+jan:{safe:'green',general:'green'},
+sci1:{safe:'green',general:'green',office:'green'},
+sci2:{safe:'green',euclid:'green',office:'green',general:'green'},
+sci3:{safe:'green',euclid:'green',keter:'green',office:'green',general:'green',medbay:'green'},
+spec:{safe:'green',euclid:'green',ec:'green',check_lcz:'green',warhead:'green'},
+guard:{safe:'green',office:'green',ec:'green',check_lcz:'green',check_ez:'green'},
+chief:{safe:'green',euclid:'green',office:'green',general:'green',ec:'green',check_lcz:'green',check_ez:'green'},
+mtf:{safe:'green',euclid:'green',keter:'green',ec:'green',medbay:'green',check_lcz:'green',check_ez:'green',gatea:'green',gateb:'green'},
+com:{safe:'green',euclid:'green',keter:'green',ec:'green',armory:'green',medbay:'green',warhead:'green',check_lcz:'green',check_ez:'green',gatea:'green',gateb:'green'},
+hacked3:{safe:'green',euclid:'green',office:'orange',general:'orange',keter:'orange',medbay:'orange',check_lcz:'orange',check_ez:'orange',warhead:'orange',ec:'orange',gatea:'orange'},
+hacked4:{safe:'green',euclid:'green',keter:'green',check_ez:'green',office:'orange',general:'orange',medbay:'orange',check_lcz:'orange',warhead:'orange',ec:'orange',gatea:'orange',gateb:'orange',armory:'orange',femur:'orange',particle:'orange'},
+hacked5:{safe:'green',euclid:'green',keter:'green',check_lcz:'green',check_ez:'green',office:'orange',general:'orange',medbay:'orange',warhead:'orange',ec:'orange',gatea:'orange',gateb:'orange',armory:'orange',femur:'orange',alpha:'orange',omega:'orange',particle:'orange'},
+director:{safe:'green',general:'green',office:'green',medbay:'green',ec:'green',check_lcz:'green',check_ez:'green',warhead:'green',femur:'green',armory:'green',omega:'green',gatea:'green',gateb:'green',particle:'green'},
+o5:{safe:'green',euclid:'green',keter:'green',office:'green',medbay:'green',general:'green',check_lcz:'green',check_ez:'green',warhead:'green',ec:'green',armory:'green',gatea:'green',gateb:'green',femur:'green',alpha:'green',omega:'green',particle:'green'},
+goc:{check_lcz:'green',check_ez:'green',warhead:'green',gatea:'green',gateb:'green'}
+};
+
+btn.addEventListener("click",()=>{
+  const val=itemList.value;
+  statusCells.forEach(c=>c.className='status red');
+  if(!val){ textDisplay.innerText="Wybierz czip"; return; }
+  textDisplay.innerHTML=itemTexts[val]||"Brak danych";
+  if(itemColors[val]){
+    Object.entries(itemColors[val]).forEach(([id,color])=>{
+      const el=document.getElementById(id);
+      if(el) el.className=`status ${color}`;
+    });
+  }
+});
+</script>
+
+</body>
+</html>
